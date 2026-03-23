@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Emoji Quiz 🎉</title>
+    <style>
+        :root {
+            --bg-color: #FAF9F7;
+            --card-bg: #FFFFFF;
+            --accent: #E07A5F;
+            --text-main: #3D405B;
+            --success: #81B29A;
+            --hint-text: #F2CC8F;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        #app {
+            background-color: var(--card-bg);
+            width: 100%;
+            max-width: 480px;
+            min-height: 400px;
+            margin: 20px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(61, 64, 91, 0.08);
+            padding: 32px 24px;
+            position: relative;
+            text-align: center;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            flex: 1;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1 {
+            font-size: 28px;
+            margin-bottom: 24px;
+            color: var(--text-main);
+        }
+
+        h2 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-main);
+            opacity: 0.6;
+            margin-bottom: 24px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .emojis {
+            font-size: 48px;
+            margin: 20px 0 30px;
+            letter-spacing: 4px;
+        }
+
+        input {
+            width: 100%;
+            padding: 16px;
+            font-size: 18px;
+            border: 2px solid #EEE;
+            border-radius: 12px;
+            text-align: center;
+            color: var(--text-main);
+            outline: none;
+            transition: border-color 0.3s;
+            margin-bottom: 16px;
+        }
+
+        input:focus {
+            border-color: var(--accent);
+        }
+
+        input.wrong {
+            animation: shake 0.4s ease-in-out;
+            border-color: #E07A5F !important;
+            color: #E07A5F;
+        }
+
+        input.correct {
+            border-color: var(--success) !important;
+            color: var(--success);
+            background-color: rgba(129, 178, 154, 0.1);
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            50% { transform: translateX(8px); }
+            75% { transform: translateX(-8px); }
+        }
+
+        button {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 12px;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s, background-color 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 12px rgba(224, 122, 95, 0.3);
+        }
+
+        button:active {
+            transform: scale(0.96);
+        }
+
+        button:hover {
+            background-color: #D06A4F;
+        }
+
+        .hud {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 24px;
+        }
+
+        .progress {
+            font-weight: bold;
+            color: #999;
+            font-size: 14px;
+        }
+
+        .lives {
+            color: var(--accent);
+            font-size: 20px;
+            display: flex;
+            gap: 4px;
+        }
+
+        .lives span {
+            transition: transform 0.3s, opacity 0.3s;
+        }
+
+        .lives span.lost {
+            transform: scale(0);
+            opacity: 0;
+        }
+
+        /* SMILEY CSS */
+        .smiley-container {
+            margin: 20px auto;
+            height: 60px;
+        }
+
+        .smiley {
+            width: 50px;
+            height: 50px;
+            background-color: #F4D03F;
+            border-radius: 50%;
+            position: relative;
+            display: inline-block;
+            transition: all 0.3s;
+            animation: bounce 2s infinite ease-in-out;
+            box-shadow: inset -4px -4px 10px rgba(0,0,0,0.1);
+        }
+
+        .eyes {
+            position: absolute;
+            top: 16px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .eye {
+            width: 6px;
+            height: 6px;
+            background-color: var(--text-main);
+            border-radius: 50%;
+            transition: all 0.3s;
+        }
+
+        .mouth {
+            position: absolute;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 22px;
+            height: 10px;
+            border-bottom: 3px solid var(--text-main);
+            border-radius: 0 0 20px 20px;
+            transition: all 0.3s;
+        }
+
+        /* Sad State */
+        .smiley.sad {
+            background-color: #E8D5B5;
+            animation: sadShake 0.5s;
+        }
+        .smiley.sad .mouth {
+            border-bottom: none;
+            border-top: 3px solid var(--text-main);
+            border-radius: 20px 20px 0 0;
+            bottom: 8px;
+        }
+
+        /* Celebrate State */
+        .smiley.celebrate {
+            animation: jump 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) infinite alternate;
+        }
+        .smiley.celebrate .eye {
+            background-color: transparent;
+            position: relative;
+        }
+        .smiley.celebrate .eye::after {
+            content: '⭐';
+            position: absolute;
+            font-size: 14px;
+            top: -7px;
+            left: -4px;
+        }
+        .smiley.celebrate .mouth {
+            height: 14px;
+            border-bottom: 4px solid var(--text-main);
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+
+        @keyframes jump {
+            0% { transform: translateY(0) scale(1.05, 0.95); }
+            100% { transform: translateY(-15px) scale(0.95, 1.05); }
+        }
+
+        @keyframes sadShake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-4px); }
+            40%, 80% { transform: translateX(4px); }
+        }
+
+        .message-area {
+            min-height: 48px;
+            margin-top: 16px;
+            font-size: 15px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #888;
+        }
+
+        .msg-hint { color: var(--accent); animation: fadeIn 0.3s; }
+        .msg-success { color: var(--success); font-weight: bold; font-size: 18px; animation: fadeIn 0.3s; }
+
+        /* Confetti */
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: var(--accent);
+            opacity: 0;
+            top: -10px;
+            animation: fall linear forwards;
+        }
+
+        @keyframes fall {
+            0% { opacity: 1; transform: translateY(0) rotate(0deg); }
+            100% { opacity: 0; transform: translateY(100vh) rotate(360deg); }
+        }
+
+        /* Birthday Screen Specifics */
+        .bday-text {
+            line-height: 1.6;
+            margin: 20px 0;
+            font-size: 18px;
+        }
+        .bday-title {
+            color: var(--accent);
+            font-size: 26px;
+            margin-bottom: 16px;
+        }
+        .smiley.big {
+            transform: scale(1.5);
+            margin: 40px auto;
+        }
+        .smiley.big.celebrate .eye::after {
+            content: '❤️';
+            font-size: 16px;
+            top: -8px;
+            left: -5px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="app">
+        <!-- Title Screen -->
+        <div id="screen-title" class="screen active">
+            <div class="smiley-container" style="margin-top: 40px;">
+                <div class="smiley">
+                    <div class="eyes"><div class="eye"></div><div class="eye"></div></div>
+                    <div class="mouth"></div>
+                </div>
+            </div>
+            <h1 style="margin-top: 20px;">Emoji Quiz 🎉</h1>
+            <p style="margin-bottom: 30px; color: #888;">Wähle deinen Spielmodus:</p>
+            <button onclick="startGame()" style="margin-bottom: 12px;">Für deinen Geburtstag 🎂</button>
+            <button onclick="startStandardGame()" style="background-color: var(--success);">Allgemeines Quiz 🌍</button>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="screen-game" class="screen">
+            <div class="hud">
+                <div class="progress" id="progress-text">1 / 16</div>
+                <div class="smiley">
+                    <div class="eyes"><div class="eye"></div><div class="eye"></div></div>
+                    <div class="mouth"></div>
+                </div>
+                <div class="lives" id="lives-container">
+                    <span>❤️</span><span>❤️</span><span>❤️</span>
+                </div>
+            </div>
+
+            <h2 id="category-label">Kategorie 🤔</h2>
+            <div class="emojis" id="emoji-display">👩‍💻☕</div>
+            
+            <form id="answer-form" style="width: 100%;">
+                <input type="text" id="answer-input" placeholder="Deine Antwort..." autocomplete="off">
+                <button type="submit" id="submit-btn">Bestätigen</button>
+            </form>
+
+            <div class="message-area" id="message-area"></div>
+        </div>
+
+        <!-- Birthday Screen -->
+        <div id="screen-bday" class="screen">
+            <h1 class="bday-title">🎂 Alles Gute zum Geburtstag, Qiqi! 🎂</h1>
+            
+            <div class="smiley big celebrate">
+                <div class="eyes"><div class="eye"></div><div class="eye"></div></div>
+                <div class="mouth"></div>
+            </div>
+
+            <p class="bday-text">
+                Das sind deine Emojis 🌹🦢👒<br>und schön dass es dich gibt!
+            </p>
+            <p style="color: #888; margin-bottom: 40px; font-weight: bold;">
+                Dein Emoji Quiz Meister 🏆
+            </p>
+
+            <button onclick="startEndlessMode()" style="background-color: var(--success); margin-bottom: 12px; margin-top: auto;">Endlos weiter spielen 🚀</button>
+            <button onclick="location.reload()" style="background-color: #eee; color: var(--text-main);">Nochmal von vorne</button>
+        </div>
+    </div>
+
+    <script>
+        
+
+        
+
+        const generalPuzzles = [
+    { category: "Filme 🎬", emojis: "🦁👑", acceptedAnswers: ["König der Löwen", "Lion King"], hint: "Ein tierisches Königreich in Afrika", hint2: "Hakuna Matata", celebration: "König der Löwen! 🦁" },
+    { category: "Filme 🎬", emojis: "🚢🧊😭", acceptedAnswers: ["Titanic"], hint: "Ein sehr großes, unsinkbares Schiff", hint2: "Leonardo DiCaprio und Kate", celebration: "Titanic! 🚢" },
+    { category: "Filme 🎬", emojis: "🧙‍♂️💍🌋", acceptedAnswers: ["Herr der Ringe", "Lord of the Rings"], hint: "Ein Hobbit auf einer großen Reise", hint2: "Ein Ring sie zu knechten", celebration: "Herr der Ringe! 💍" },
+    { category: "Filme 🎬", emojis: "🦖🦕🏃‍♂️", acceptedAnswers: ["Jurassic Park", "Jurassic World"], hint: "Dinosaurier werden wiederbelebt", hint2: "Ein Freizeitpark der schiefgeht", celebration: "Jurassic Park! 🦖" },
+    { category: "Filme 🎬", emojis: "👽📞🚲🌕", acceptedAnswers: ["ET", "E.T.", "E.T"], hint: "Ein Alien will nach Hause", hint2: "Nach Hause telefonieren", celebration: "E.T.! 👽" },
+    { category: "Filme 🎬", emojis: "⚡👦👓🪄", acceptedAnswers: ["Harry Potter", "Harry"], hint: "Ein Junge, der überlebt hat", hint2: "Gryffindor", celebration: "Harry Potter! ⚡" },
+    { category: "Filme 🎬", emojis: "🐼🥋", acceptedAnswers: ["Kung Fu Panda", "Kungfu Panda"], hint: "Ein Bär, der Kampfsport liebt", hint2: "Po der Drachenkrieger", celebration: "Kung Fu Panda! 🐼" },
+    { category: "Filme 🎬", emojis: "🏴‍☠️🚢⚓", acceptedAnswers: ["Fluch der Karibik", "Pirates of the Caribbean"], hint: "Captain Jack Sparrow", hint2: "Piraten auf der Suche nach Rum", celebration: "Fluch der Karibik! 🏴‍☠️" },
+    { category: "Filme 🎬", emojis: "🤡🎈💧", acceptedAnswers: ["Es", "It"], hint: "Ein böser Clown im Abfluss", hint2: "Pennywise", celebration: "Es! 🎈" },
+    { category: "Filme 🎬", emojis: "🔴💊🟦💊🕶️", acceptedAnswers: ["Matrix", "The Matrix"], hint: "Rote Pille oder blaue Pille?", hint2: "Neo und Trinity", celebration: "Matrix! 🕶️" },
+    { category: "Filme 🎬", emojis: "🐠🔍🌊", acceptedAnswers: ["Findet Nemo", "Finding Nemo"], hint: "Ein Vater sucht seinen Sohn im Meer", hint2: "P. Sherman, 42 Wallaby Way", celebration: "Findet Nemo! 🐠" },
+    { category: "Filme 🎬", emojis: "🦇👨🚙", acceptedAnswers: ["Batman", "The Dark Knight", "Dark Knight"], hint: "Ein Milliardär im Fledermauskostüm", hint2: "Beschützer von Gotham City", celebration: "Batman! 🦇" },
+    { category: "Filme 🎬", emojis: "��️👨🕸️", acceptedAnswers: ["Spiderman", "Spider-Man", "Spider Man"], hint: "Von einer radioaktiven Spinne gebissen", hint2: "Peter Parker", celebration: "Spider-Man! 🕷️" },
+
+    { category: "Tiere ��", emojis: "🦒🌿", acceptedAnswers: ["Giraffe"], hint: "Ein sehr großes Tier", hint2: "Langer Hals für hohe Blätter", celebration: "Giraffe! 🦒" },
+    { category: "Tiere 🐾", emojis: "🦘🥊🇦🇺", acceptedAnswers: ["Känguru", "Kaenguru"], hint: "Ein Tier, das gerne springt", hint2: "Das Wappentier von Australien", celebration: "Känguru! 🦘" },
+    { category: "Tiere 🐾", emojis: "🐘🥜", acceptedAnswers: ["Elefant"], hint: "Das größte an Land lebende Säugetier", hint2: "Hat einen Rüssel", celebration: "Elefant! 🐘" },
+    { category: "Tiere 🐾", emojis: "🐧❄️", acceptedAnswers: ["Pinguin"], hint: "Ein Vogel, der nicht fliegen kann", hint2: "Lebt im Eis und trägt 'Smoking'", celebration: "Pinguin! 🐧" },
+    { category: "Tiere 🐾", emojis: "��🏜️", acceptedAnswers: ["Kamel"], hint: "Das Wüstenschiff", hint2: "Hat zwei Höcker", celebration: "Kamel! 🐫" },
+    { category: "Tiere 🐾", emojis: "🦥💤🌳", acceptedAnswers: ["Faultier"], hint: "Ein Tier, das es sehr gemütlich angeht", hint2: "Der Name sagt schon, wie faul es ist", celebration: "Faultier! 🦥" },
+
+    { category: "Städte 🏙️", emojis: "🗼🥖🥐", acceptedAnswers: ["Paris"], hint: "Stadt der Liebe", hint2: "In Frankreich", celebration: "Paris! 🗼" },
+    { category: "Städte 🏙️", emojis: "🗽🍎🚖", acceptedAnswers: ["New York", "NYC"], hint: "The Big Apple", hint2: "Freiheitsstatue", celebration: "New York! 🗽" },
+    { category: "Städte 🏙️", emojis: "🌉🌫️🚋", acceptedAnswers: ["San Francisco"], hint: "Goldene Hängebrücke", hint2: "Cable Cars und viel Nebel", celebration: "San Francisco! 🌉" },
+    { category: "Städte 🏙️", emojis: "🎡🕰️💂", acceptedAnswers: ["London"], hint: "Die Hauptstadt von England", hint2: "Big Ben und rote Doppeldeckerbusse", celebration: "London! 🎡" },
+    { category: "Städte 🏙️", emojis: "🍕🏛️🛵", acceptedAnswers: ["Rom", "Rome"], hint: "Kolosseum", hint2: "Alle Wege führen dorthin", celebration: "Rom! 🏛️" },
+    { category: "Städte 🏙️", emojis: "🥨🍺🏰", acceptedAnswers: ["München", "Munich"], hint: "Oktoberfest", hint2: "Hauptstadt von Bayern", celebration: "München! 🥨" },
+    { category: "Städte 🏙️", emojis: "⛩️🍣🌸", acceptedAnswers: ["Tokio", "Tokyo"], hint: "Japans Hauptstadt", hint2: "Shibuya Kreuzung und Sushi", celebration: "Tokio! ⛩️" },
+    { category: "Städte 🏙️", emojis: "🐻🏢🌆🌯", acceptedAnswers: ["Berlin"], hint: "Hauptstadt Deutschlands", hint2: "Currywurst und Döner", celebration: "Berlin! 🐻" },
+    { category: "Städte 🏙️", emojis: "🎭🛶🌊", acceptedAnswers: ["Venedig", "Venice"], hint: "Die Stadt im Wasser", hint2: "Gondeln und Kanäle", celebration: "Venedig! 🛶" },
+
+    { category: "Essen 🍔", emojis: "🍞🧀🥩🍞", acceptedAnswers: ["Burger", "Hamburger", "Cheeseburger"], hint: "Fast Food Klassiker", hint2: "Zwei Brötchenhälften mit Fleisch dazwischen", celebration: "Burger! 🍔" },
+    { category: "Essen 🍔", emojis: "🍝🍅🧀", acceptedAnswers: ["Spaghetti", "Pasta", "Nudeln"], hint: "Italienischer Klassiker", hint2: "Lange Nudeln", celebration: "Spaghetti! 🍝" },
+    { category: "Essen ��", emojis: "🥔🍟", acceptedAnswers: ["Pommes", "Pommes frites", "Fritten"], hint: "Frittierte Kartoffelstäbchen", hint2: "Gerne mit Ketchup oder Mayo", celebration: "Pommes! 🍟" },
+    { category: "Essen 🍔", emojis: "🌮🇲🇽", acceptedAnswers: ["Taco", "Tacos"], hint: "Mexikanisches Streetfood", hint2: "Gefüllte Tortilla-Schale", celebration: "Tacos! 🌮" },
+    { category: "Essen 🍔", emojis: "🍱🥢", acceptedAnswers: ["Sushi"], hint: "Fisch und Reis", hint2: "Japanische Spezialität", celebration: "Sushi! 🍱" },
+    { category: "Essen 🍔", emojis: "🍫🥛", acceptedAnswers: ["Schokolade", "Milchschokolade"], hint: "Süß und schmilzt im Mund", hint2: "Besteht aus Kakao", celebration: "Schokolade! 🍫" },
+    
+    { category: "Sprichwörter 💬", emojis: "🌅🐦🐛", acceptedAnswers: ["Der frühe Vogel fängt den Wurm", "Der frühe Vogel"], hint: "Wer früh aufsteht, hat Erfolg", hint2: "...fängt den...?", celebration: "Der frühe Vogel fängt den Wurm! 🐦" },
+    { category: "Sprichwörter 💬", emojis: "🍀🐷", acceptedAnswers: ["Schwein gehabt", "Glücksschwein"], hint: "Wenn man nochmal davongekommen ist", hint2: "Ein Tier das Glück bringt", celebration: "Schwein gehabt! 🐷" },
+    { category: "Sprichwörter 💬", emojis: "🐘📦💥", acceptedAnswers: ["Elefant im Porzellanladen"], hint: "Jemand, der sich sehr ungeschickt verhält", hint2: "Ein großes Tier umgeben von zerbrechlichen Dingen", celebration: "Elefant im Porzellanladen! 🐘" },
+    { category: "Sprichwörter 💬", emojis: "🐴❌👄👀", acceptedAnswers: ["Einem geschenkten Gaul schaut man nicht ins Maul", "Geschenkter Gaul"], hint: "Man soll Geschenke nicht kritisieren", hint2: "Pferdewörter...", celebration: "Einem geschenkten Gaul schaut man nicht ins Maul! 🐴" },
+    
+    { category: "Marken / Firmen 🏢", emojis: "🍎📱💻", acceptedAnswers: ["Apple"], hint: "Ein großes Tech-Unternehmen", hint2: "iPhone und Mac", celebration: "Apple! 🍎" },
+    { category: "Marken / Firmen 🏢", emojis: "Ⓜ️🍟🍔", acceptedAnswers: ["McDonalds", "McDonald's"], hint: "Ein riesiges Fast-Food-Unternehmen", hint2: "Das goldene M", celebration: "McDonald's! 🍟" },
+    { category: "Marken / Firmen 🏢", emojis: "👟✔️", acceptedAnswers: ["Nike"], hint: "Ein Sportartikelhersteller", hint2: "Just do it", celebration: "Nike! ✔️" },
+    { category: "Marken / Firmen 🏢", emojis: "🚗💍💍💍💍", acceptedAnswers: ["Audi"], hint: "Eine deutsche Automarke", hint2: "Hat vier Ringe im Logo", celebration: "Audi! 🚗" },
+    { category: "Marken / Firmen 🏢", emojis: "🥤🐻‍❄️🔴", acceptedAnswers: ["Coca Cola", "Cola", "Coca-Cola"], hint: "Erfrischungsgetränk", hint2: "Rote Dose", celebration: "Coca Cola! 🥤" },
+
+    { category: "Länder 🗺️", emojis: "🍁🏒🥞", acceptedAnswers: ["Kanada", "Canada"], hint: "Großes Land in Nordamerika", hint2: "Ahornsirup und Eishockey", celebration: "Kanada! 🍁" },
+    { category: "Länder 🗺️", emojis: "🦘🐨🏜️", acceptedAnswers: ["Australien", "Australia"], hint: "Ein Kontinent und Land", hint2: "Down Under", celebration: "Australien! 🐨" },
+    { category: "Länder 🗺️", emojis: "🐂🥘💃", acceptedAnswers: ["Spanien", "Spain"], hint: "Ein Land im Süden Europas", hint2: "Paella und Flamenco", celebration: "Spanien! 🥘" },
+    { category: "Länder 🗺️", emojis: "🍕🍝🤌", acceptedAnswers: ["Italien", "Italy"], hint: "Ein Land in Form eines Stiefels", hint2: "Pizza und Pasta", celebration: "Italien! 🍕" },
+    { category: "Länder 🗺️", emojis: "🏔️🧀🍫🕒", acceptedAnswers: ["Schweiz", "Switzerland"], hint: "Berge und Neutralität", hint2: "Guter Käse, Schokolade und Uhren", celebration: "Die Schweiz! 🧀" },
+    { category: "Länder 🗺️", emojis: "🏜️🐪🔺", acceptedAnswers: ["Ägypten", "Egypt", "Aegypten"], hint: "Ein Land in Nordafrika", hint2: "Pyramiden und Nil", celebration: "Ägypten! 🔺" },
+
+    { category: "Märchen 🧚", emojis: "🐺👧🔴👗", acceptedAnswers: ["Rotkäppchen", "Rotkaeppchen"], hint: "Ein Mädchen mit rotem Umhang", hint2: "Der böse Wolf", celebration: "Rotkäppchen! 🐺" },
+    { category: "Märchen ��", emojis: "👸🍎☠️🔨⛏️", acceptedAnswers: ["Schneewittchen", "Schneewitchen"], hint: "Siebent Zwerge", hint2: "Ein vergifteter Apfel", celebration: "Schneewittchen! 🍎" },
+    { category: "Märchen 🧚", emojis: "🐸👑💋", acceptedAnswers: ["Der Froschkönig", "Froschkönig"], hint: "Eine goldene Kugel fällt in den Brunnen", hint2: "Ein Frosch muss geküsst werden", celebration: "Der Froschkönig! 🐸" },
+    { category: "Märchen 🧚", emojis: "👧👠🕛🎃", acceptedAnswers: ["Aschenputtel", "Cinderella"], hint: "Ein verlorener Glasschuh", hint2: "Die Kutsche wird zum Kürbis", celebration: "Aschenputtel! 👠" },
+
+    { category: "Gegenstände 📦", emojis: "☔💧🌧️", acceptedAnswers: ["Regenschirm", "Schirm"], hint: "Schützt dich vorm Wetter", hint2: "Wird bei Regen aufgespannt", celebration: "Ein Regenschirm! ☔" },
+    { category: "Gegenstände 📦", emojis: "🔑🚪", acceptedAnswers: ["Schlüssel", "Schluessel"], hint: "Zum Aufschließen", hint2: "Passt ins Schloss", celebration: "Ein Schlüssel! 🔑" },
+    { category: "Gegenstände 📦", emojis: "⌚🕰️", acceptedAnswers: ["Uhr", "Armbanduhr"], hint: "Zeigt dir wie spät es ist", hint2: "Trägt man meistens am Handgelenk", celebration: "Eine Uhr! ⌚" },
+
+    { category: "Musik 🎵", emojis: "👑🎸🕺", acceptedAnswers: ["Elvis", "Elvis Presley"], hint: "King of Rock'n'Roll", hint2: "Jailhouse Rock", celebration: "Elvis Presley! 🎸" },
+    { category: "Musik 🎵", emojis: "🎤🌙🚶‍♂️🧤", acceptedAnswers: ["Michael Jackson"], hint: "King of Pop", hint2: "Moonwalk", celebration: "Michael Jackson! 🧤" },
+    { category: "Musik 🎵", emojis: "🎹👨‍🦲🎼", acceptedAnswers: ["Beethoven", "Ludwig van Beethoven"], hint: "Berühmter klassischer Komponist", hint2: "Er wurde taub", celebration: "Beethoven! 🎹" }
+];
+
+        const originalPuzzles = [
+            { category: "Wer? 🤔", emojis: "🧉📚🐻", acceptedAnswers: ["Paul"], hint: "Er trinkt immer das gleiche Getränk...", hint2: "Literal Bear", celebration: "Aber natürlich unser lieber Paul! 🧉" },
+            { category: "Wer? 🤔", emojis: "♪🏓🥚", acceptedAnswers: ["Luca"], hint: "Musik und Eier zum Frühstuck", hint2: "Tischtennis König", celebration: "Luca! 🏓" },
+            { category: "Wer? 🤔", emojis: "💻🇸🇪🍷", acceptedAnswers: ["Jana"], hint: "Sie ist ein totaler Nerd", hint2: "Finanzamt?!", celebration: "Jana! Skål! 🍷" },
+            { category: "Wer? 🤔", emojis: "🦺🐻‍❄️♯", acceptedAnswers: ["Noah"], hint: "Bauer lmao", hint2: "Der andere Bär", celebration: "Noah! 🐻‍❄️" },
+            { category: "Wer? 🤔", emojis: "🛩️🍞🪵", acceptedAnswers: ["Alex"], hint: "Yapper queen", hint2: "Brot und Minecraft Steve looking ahhh", celebration: "Alex! 🛩️" },
+            { category: "Wer? 🤔", emojis: "🌎🏸🏎️💨", acceptedAnswers: ["Qiqi", "Elisabeth", "Qiqi Elisabeth"], hint: "Nerd", hint2: "Nerd", celebration: "Das Geburtstagskind! 🎂🏸" },
+            { category: "Wer? 🤔", emojis: "👱‍♀️💬", acceptedAnswers: ["Vinc", "Vincent"], hint: "Magestic Blonde", hint2: "Hat IMMER was zu sagen", celebration: "Vinc! Ohne ihn wärs still 💬" },
+            { category: "Wer? 🤔", emojis: "🫧👓😱", acceptedAnswers: ["Andreas"], hint: "Burp", hint2: "Aaaaaaa", celebration: "Andreas! 👓" },
+            { category: "Wo? 📍", emojis: "🥙🍺🏙️", acceptedAnswers: ["Pontstraße", "Pontstrasse", "Pont", "Pontviertel"], hint: "Jeder Student kennt diese Straße", hint2: "Döner plus Bier plus Nightlife", celebration: "Die Pontstraße! 🍺" },
+            { category: "Wo? 📍", emojis: "🎵📈🏫", acceptedAnswers: ["Audimax"], hint: "Der größte Hörsaal. Immer laut :))", hint2: "Hunderte Studenten passen rein", celebration: "Das Audimax! 🏫" },
+            { category: "Wo? 📍", emojis: "📚😴💡☕", acceptedAnswers: ["Lernraum", "Lern Raum", "Studyroom", "Study Room", "Saal"], hint: "Wo wir jeden Tag sitzen", hint2: "Kaffee und Verzweiflung inklusive", celebration: "Unser geliebter Lernraum! ☕" },
+            { category: "Wo? 📍", emojis: "🔥🌭🌙🏠", acceptedAnswers: ["Grillen", "Grillabend", "Grill", "Terrasse"], hint: "Draußen abends bei uns", hint2: "Würstchen und gute Gespräche", celebration: "Grillabend im Garten! 🔥" },
+            { category: "Was? 🎯", emojis: "🧑‍🍳👍❷🗓️", acceptedAnswers: ["Schnitzel Dienstag", "Schnitzeldienstag", "Schnitzel"], hint: "Wöchentliches Mensa Ritual", hint2: "Jeden zweiten Tag der Woche", celebration: "SCHNITZEL DIENSTAG! 🍽️" },
+            { category: "Was? 🎯", emojis: "😫🌅👨‍🏫", acceptedAnswers: ["8 Uhr Vorlesung", "8 uhr vorlesung", "Frühvorlesung", "8 Uhr", "Acht Uhr Vorlesung"], hint: "Der schlimmste Start in den Tag", hint2: "Sonnenaufgang plus Professor", celebration: "Die 8 Uhr Vorlesung! Niemand verdient das 😫" },
+        ];
+
+        
+
+        let playList = [];
+        let currentIndex = 0;
+        let mistakes = 0;
+        let isTransitioning = false;
+        let isEndlessMode = false;
+
+        // Element Referenzen
+        const screenTitle = document.getElementById('screen-title');
+        const screenGame = document.getElementById('screen-game');
+        const screenBday = document.getElementById('screen-bday');
+        const categoryLabel = document.getElementById('category-label');
+        const emojiDisplay = document.getElementById('emoji-display');
+        const answerInput = document.getElementById('answer-input');
+        const form = document.getElementById('answer-form');
+        const progressText = document.getElementById('progress-text');
+        const messageArea = document.getElementById('message-area');
+        const livesSpans = document.querySelectorAll('#lives-container span');
+        const gameSmiley = document.querySelector('#screen-game .smiley');
+
+        function normalizeString(str) {
+            return str.toLowerCase()
+                .replace(/ä/g, 'ae')
+                .replace(/ö/g, 'oe')
+                .replace(/ü/g, 'ue')
+                .replace(/ß/g, 'ss')
+                .trim();
+        }
+
+        function shuffle(array) {
+            let currentIndex = array.length, randomIndex;
+            while (currentIndex != 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        }
+
+        
+        function startEndlessMode() {
+            isEndlessMode = true;
+            playList = [...generalPuzzles];
+            shuffle(playList);
+            currentIndex = 0;
+            
+            // Clean up confetti
+            document.querySelectorAll('.confetti').forEach(el => el.remove());
+            
+            switchScreen(screenBday, screenGame);
+            loadPuzzle();
+        }
+
+        function startStandardGame() {
+            isEndlessMode = true;
+            playList = [...generalPuzzles];
+            shuffle(playList);
+            currentIndex = 0;
+            switchScreen(screenTitle, screenGame);
+            loadPuzzle();
+        }
+
+        function startGame() {
+            // Prepare playlist
+            let pool = [...originalPuzzles];
+            // Find "Nemas Geburtstag" and remove it
+            const bdayPuzzleIndex = pool.findIndex(p => p.acceptedAnswers.includes("Nemas Geburtstag"));
+            const bdayPuzzle = pool.splice(bdayPuzzleIndex, 1)[0];
+            
+            // Shuffle rest and append birthday puzzle as last
+            shuffle(pool);
+            playList = [...pool, bdayPuzzle];
+            
+            currentIndex = 0;
+            switchScreen(screenTitle, screenGame);
+            loadPuzzle();
+        }
+
+        function switchScreen(from, to) {
+            from.classList.remove('active');
+            to.classList.add('active');
+        }
+
+        function loadPuzzle() {
+            if (currentIndex >= playList.length) {
+                if (isEndlessMode) {
+                    shuffle(playList);
+                    currentIndex = 0;
+                } else {
+                    showBirthdayScreen();
+                    return;
+                }
+            }
+
+            const puzzle = playList[currentIndex];
+            categoryLabel.textContent = puzzle.category;
+            emojiDisplay.textContent = puzzle.emojis;
+            progressText.textContent = `${currentIndex + 1} / ${playList.length}`;
+            
+            // Reset state
+            mistakes = 0;
+            answerInput.value = '';
+            answerInput.className = '';
+            answerInput.disabled = false;
+            messageArea.innerHTML = '';
+            gameSmiley.className = 'smiley';
+            isTransitioning = false;
+            
+            livesSpans.forEach(span => span.className = '');
+
+            setTimeout(() => {
+                answerInput.focus();
+            }, 100);
+        }
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (isTransitioning) return;
+
+            const guess = normalizeString(answerInput.value);
+            if (!guess) return;
+
+            const puzzle = playList[currentIndex];
+            const isCorrect = puzzle.acceptedAnswers.some(ans => normalizeString(ans) === guess);
+
+            if (isCorrect) {
+                handleCorrect(puzzle);
+            } else {
+                handleWrong(puzzle);
+            }
+        });
+
+        function handleCorrect(puzzle) {
+            isTransitioning = true;
+            answerInput.className = 'correct';
+            answerInput.disabled = true;
+            gameSmiley.className = 'smiley celebrate';
+            
+            messageArea.innerHTML = `<span class="msg-success">${puzzle.celebration}</span>`;
+            
+            setTimeout(() => {
+                currentIndex++;
+                loadPuzzle();
+            }, 2500);
+        }
+
+        function handleWrong(puzzle) {
+            mistakes++;
+            
+            // Shake input
+            answerInput.className = 'wrong';
+            setTimeout(() => answerInput.className = '', 400);
+
+            // Update Lives
+            if (mistakes <= 3) {
+                livesSpans[3 - mistakes].className = 'lost';
+            }
+
+            // Update Smiley
+            gameSmiley.className = 'smiley sad';
+            setTimeout(() => {
+                if(!isTransitioning) gameSmiley.className = 'smiley';
+            }, 1000);
+
+            // Handle hints / skip
+            if (mistakes === 1) {
+                messageArea.innerHTML = `<span class="msg-hint">Tipp: ${puzzle.hint}</span>`;
+                answerInput.value = '';
+                answerInput.focus();
+            } else if (mistakes === 2) {
+                messageArea.innerHTML = `<span class="msg-hint">Tipp 2: ${puzzle.hint2}</span>`;
+                answerInput.value = '';
+                answerInput.focus();
+            } else if (mistakes >= 3) {
+                isTransitioning = true;
+                answerInput.value = puzzle.acceptedAnswers[0];
+                answerInput.disabled = true;
+                messageArea.innerHTML = `<span class="msg-hint">Die Antwort war: <b>${puzzle.acceptedAnswers[0]}</b></span>`;
+                
+                setTimeout(() => {
+                    currentIndex++;
+                    loadPuzzle();
+                }, 3000);
+            }
+        }
+
+        function showBirthdayScreen() {
+            switchScreen(screenGame, screenBday);
+            createConfetti();
+        }
+
+        function createConfetti() {
+            const colors = ['#E07A5F', '#81B29A', '#F2CC8F', '#F4D03F', '#3D405B'];
+            for (let i = 0; i < 80; i++) {
+                const confetti = document.createElement('div');
+                confetti.classList.add('confetti');
+                
+                // Randomize properties
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                confetti.style.animationDelay = (Math.random() * 2) + 's';
+                
+                document.body.appendChild(confetti);
+            }
+        }
+    </script>
+</body>
+</html>
