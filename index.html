@@ -322,9 +322,33 @@
             left: -5px;
         }
 
+        #mute-toggle {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: var(--card-bg);
+            border: 2px solid #EEE;
+            font-size: 20px;
+            cursor: pointer;
+            z-index: 100;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: transform 0.2s;
+            padding: 0;
+            line-height: 1;
+        }
+        #mute-toggle:hover { transform: scale(1.1); }
+        #mute-toggle:active { transform: scale(0.95); }
+
     </style>
 </head>
 <body>
+    <button id="mute-toggle" onclick="toggleMute()" aria-label="Toggle music">🔊</button>
 
     <div id="app">
         <!-- Title Screen -->
@@ -387,6 +411,31 @@
     </div>
 
     <script>
+        // ── MUSIC ──
+        const bgMusic = new Audio('music.mp3');
+        bgMusic.loop = true;
+        bgMusic.volume = 0.4;
+        let musicStarted = false;
+
+        function startMusic() {
+            if (!musicStarted) {
+                bgMusic.play().catch(() => {});
+                musicStarted = true;
+                document.getElementById('mute-toggle').style.display = 'flex';
+            }
+        }
+
+        function toggleMute() {
+            const btn = document.getElementById('mute-toggle');
+            if (bgMusic.paused) {
+                bgMusic.play();
+                btn.textContent = '🔊';
+            } else {
+                bgMusic.pause();
+                btn.textContent = '🔇';
+            }
+        }
+
         const generalPuzzles = [
             // ── MOVIES ──
             { category: "Movies 🎬", emojis: "🧬🦟🏝️🦖", acceptedAnswers: ["Jurassic Park"], hint: "Life, uh, finds a way", hint2: "Mosquito + amber = bad idea", celebration: "Jurassic Park! 🦖" },
@@ -529,6 +578,7 @@
         }
 
         function startEndlessMode() {
+            startMusic();
             isEndlessMode = true;
             setLanguage('en');
             playList = [...generalPuzzles];
@@ -540,6 +590,7 @@
         }
 
         function startStandardGame() {
+            startMusic();
             isEndlessMode = true;
             setLanguage('en');
             playList = [...generalPuzzles];
@@ -550,6 +601,7 @@
         }
 
         function startGame() {
+            startMusic();
             setLanguage('de');
             let pool = [...originalPuzzles];
             const bdayPuzzleIndex = pool.findIndex(p => p.acceptedAnswers.includes("Nemas Geburtstag"));
